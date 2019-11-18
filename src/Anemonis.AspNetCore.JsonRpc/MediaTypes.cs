@@ -5,5 +5,6 @@ namespace Anemonis.AspNetCore.JsonRpc
     internal static class MediaTypes
     {
         public const string ApplicationJson = "application/json";
+        public const string Any = "*/*";
     }
 }

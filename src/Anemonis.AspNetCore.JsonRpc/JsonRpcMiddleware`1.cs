@@ -33,6 +33,7 @@ namespace Anemonis.AspNetCore.JsonRpc
         private readonly ILogger _logger;
         private readonly T _handler;
         private readonly JsonRpcSerializer _serializer;
+        private readonly JsonRpcOptions _options;
 
         /// <summary>Initializes a new instance of the <see cref="JsonRpcMiddleware{T}" /> class.</summary>
         /// <param name="services">The <see cref="IServiceProvider" /> instance for retrieving service objects.</param>
@@ -45,19 +46,14 @@ namespace Anemonis.AspNetCore.JsonRpc
             {
                 throw new ArgumentNullException(nameof(services));
             }
-            if (environment == null)
-            {
-                throw new ArgumentNullException(nameof(environment));
-            }
-            if (logger == null)
-            {
-                throw new ArgumentNullException(nameof(logger));
-            }
 
-            _environment = environment;
-            _logger = logger;
+            _environment = environment ?? throw new ArgumentNullException(nameof(environment));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            _options = services.GetService<IOptions<JsonRpcOptions>>()?.Value ?? JsonRpcOptions.CreateDefault();
             _handler = services.GetService<T>() ?? ActivatorUtilities.CreateInstance<T>(services);
-            _serializer = new JsonRpcSerializer(CreateJsonRpcContractResolver(_handler), services.GetService<IOptions<JsonRpcOptions>>()?.Value?.JsonSerializer);
+
+            _serializer = new JsonRpcSerializer(CreateJsonRpcContractResolver(_handler), _options.JsonSerializer);
         }
 
         private static bool IsReservedErrorCode(long code)
@@ -143,29 +139,38 @@ namespace Anemonis.AspNetCore.JsonRpc
 
                 return;
             }
-            if (!context.Request.Headers.TryGetValue(HeaderNames.Accept, out var acceptTypeHeaderValueString))
-            {
-                context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
 
-                return;
-            }
-            if (!MediaTypeHeaderValue.TryParse((string)acceptTypeHeaderValueString, out var acceptTypeHeaderValue))
+            if (_options.ValidateAcceptHeader)
             {
-                context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+                if (!context.Request.Headers.TryGetValue(HeaderNames.Accept, out var acceptTypeHeaderValueString))
+                {
+                    context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
 
-                return;
-            }
-            if (!acceptTypeHeaderValue.MediaType.Equals(MediaTypes.ApplicationJson, StringComparison.OrdinalIgnoreCase))
-            {
-                context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+                    return;
+                }
 
-                return;
-            }
-            if (acceptTypeHeaderValue.Charset.HasValue && !SupportedEncodings.TryGetValue(acceptTypeHeaderValue.Charset.Value, out responseStreamEncoding))
-            {
-                context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+                if (!MediaTypeHeaderValue.TryParse((string)acceptTypeHeaderValueString, out var acceptTypeHeaderValue))
+                {
+                    context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
 
-                return;
+                    return;
+                }
+
+                if (!acceptTypeHeaderValue.MediaType.Equals(MediaTypes.Any, StringComparison.OrdinalIgnoreCase) &&
+                    !acceptTypeHeaderValue.MediaType.Equals(MediaTypes.ApplicationJson, StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+
+                    return;
+                }
+
+                if (acceptTypeHeaderValue.Charset.HasValue &&
+                    !SupportedEncodings.TryGetValue(acceptTypeHeaderValue.Charset.Value, out responseStreamEncoding))
+                {
+                    context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+
+                    return;
+                }
             }
 
             requestStreamEncoding ??= SupportedEncodings[Encoding.UTF8.WebName];

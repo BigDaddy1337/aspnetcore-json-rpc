@@ -18,5 +18,20 @@ namespace Anemonis.AspNetCore.JsonRpc
             get;
             set;
         }
+
+        /// <summary>Gets or sets the VerifyAcceptHeader attribute used for validate HTTP Accept header.</summary>
+        public bool ValidateAcceptHeader
+        {
+            get;
+            set;
+        }
+
+        internal static JsonRpcOptions CreateDefault()
+        {
+            return new JsonRpcOptions()
+            {
+                ValidateAcceptHeader = true
+            };
+        }
     }
 }
