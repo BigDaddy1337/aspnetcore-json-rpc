@@ -19,16 +19,13 @@ namespace Anemonis.AspNetCore.JsonRpc
             set;
         }
 
-        /// <summary>Gets or sets the IgnoreEmptyAcceptHeader attribute used for disable validation HTTP Accept header.</summary>
+        /// <summary>
+        /// By default HTTP Accept header is required and only 'application/json' is valid, with this option Middleware disable any validation for Accept header
+        /// </summary>
         public bool IgnoreEmptyAcceptHeader
         {
             get;
             set;
-        }
-
-        internal static JsonRpcOptions CreateDefault()
-        {
-            return new JsonRpcOptions();
         }
     }
 }

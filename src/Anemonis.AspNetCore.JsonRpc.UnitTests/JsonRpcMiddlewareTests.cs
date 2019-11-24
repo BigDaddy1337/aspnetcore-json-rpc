@@ -196,8 +196,11 @@ namespace Anemonis.AspNetCore.JsonRpc.UnitTests
             Assert.AreEqual(StatusCodes.Status406NotAcceptable, httpContext.Response.StatusCode);
         }
 
-        [TestMethod]
-        public async Task InvokeAsyncWhenAcceptHeaderIsNotSpecifiedButIgnoreEmptyAcceptHeaderIsEnabled()
+        [DataTestMethod]
+        [DataRow(null)]
+        [DataRow("application/xml")]
+        [DataRow("text/plain")]
+        public async Task InvokeAsyncWhenIgnoreEmptyAcceptHeaderIsEnabled(string mediaType)
         {
             var serviceProviderMock = new Mock<IServiceProvider>(MockBehavior.Strict);
 
@@ -220,6 +223,11 @@ namespace Anemonis.AspNetCore.JsonRpc.UnitTests
 
             httpContext.Request.Method = HttpMethods.Post;
             httpContext.Request.ContentType = "application/json; charset=utf-8";
+
+            if (mediaType != null)
+            {
+                httpContext.Request.Headers.Add(HeaderNames.Accept, mediaType);
+            }
 
             await jsonRpcMiddleware.InvokeAsync(httpContext, c => Task.CompletedTask);
 

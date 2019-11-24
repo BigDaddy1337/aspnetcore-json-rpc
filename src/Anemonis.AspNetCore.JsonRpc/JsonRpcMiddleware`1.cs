@@ -46,11 +46,19 @@ namespace Anemonis.AspNetCore.JsonRpc
             {
                 throw new ArgumentNullException(nameof(services));
             }
+            if (environment == null)
+            {
+                throw new ArgumentNullException(nameof(environment));
+            }
+            if (logger == null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
 
-            _environment = environment ?? throw new ArgumentNullException(nameof(environment));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _environment = environment;
+            _logger = logger;
 
-            _options = services.GetService<IOptions<JsonRpcOptions>>()?.Value ?? JsonRpcOptions.CreateDefault();
+            _options = services.GetService<IOptions<JsonRpcOptions>>()?.Value ?? new JsonRpcOptions();
             _handler = services.GetService<T>() ?? ActivatorUtilities.CreateInstance<T>(services);
 
             _serializer = new JsonRpcSerializer(CreateJsonRpcContractResolver(_handler), _options.JsonSerializer);
