@@ -196,6 +196,36 @@ namespace Anemonis.AspNetCore.JsonRpc.UnitTests
             Assert.AreEqual(StatusCodes.Status406NotAcceptable, httpContext.Response.StatusCode);
         }
 
+        [TestMethod]
+        public async Task InvokeAsyncWhenAcceptHeaderIsNotSpecifiedButIgnoreEmptyAcceptHeaderIsEnabled()
+        {
+            var serviceProviderMock = new Mock<IServiceProvider>(MockBehavior.Strict);
+
+            serviceProviderMock.Setup(o => o.GetService(typeof(JsonRpcTestHandler1)))
+                .Returns(null);
+            serviceProviderMock.Setup(o => o.GetService(typeof(IOptions<JsonRpcOptions>)))
+                .Returns(Options.Create(new JsonRpcOptions() { IgnoreEmptyAcceptHeader = true }));
+            serviceProviderMock.Setup(o => o.GetService(typeof(ILoggerFactory)))
+                .Returns(null);
+
+            var environmentMock = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
+
+            environmentMock
+                .Setup(o => o.EnvironmentName)
+                .Returns(Environments.Production);
+
+            var loggerMock = new Mock<ILogger<JsonRpcMiddleware<JsonRpcTestHandler1>>>(MockBehavior.Loose);
+            var jsonRpcMiddleware = new JsonRpcMiddleware<JsonRpcTestHandler1>(serviceProviderMock.Object, environmentMock.Object, loggerMock.Object);
+            var httpContext = new DefaultHttpContext();
+
+            httpContext.Request.Method = HttpMethods.Post;
+            httpContext.Request.ContentType = "application/json; charset=utf-8";
+
+            await jsonRpcMiddleware.InvokeAsync(httpContext, c => Task.CompletedTask);
+
+            Assert.AreEqual(StatusCodes.Status200OK, httpContext.Response.StatusCode);
+        }
+
         [DataTestMethod]
         [DataRow("application/json; charset=us-ascii")]
         [DataRow("application/json; charset=utf")]
