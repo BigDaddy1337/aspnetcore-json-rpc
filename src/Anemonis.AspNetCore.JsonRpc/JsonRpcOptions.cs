@@ -19,8 +19,8 @@ namespace Anemonis.AspNetCore.JsonRpc
             set;
         }
 
-        /// <summary>Gets or sets the VerifyAcceptHeader attribute used for validate HTTP Accept header.</summary>
-        public bool ValidateAcceptHeader
+        /// <summary>Gets or sets the IgnoreEmptyAcceptHeader attribute used for disable validation HTTP Accept header.</summary>
+        public bool IgnoreEmptyAcceptHeader
         {
             get;
             set;
@@ -28,10 +28,7 @@ namespace Anemonis.AspNetCore.JsonRpc
 
         internal static JsonRpcOptions CreateDefault()
         {
-            return new JsonRpcOptions()
-            {
-                ValidateAcceptHeader = true
-            };
+            return new JsonRpcOptions();
         }
     }
 }

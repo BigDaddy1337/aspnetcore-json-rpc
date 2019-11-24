@@ -140,7 +140,7 @@ namespace Anemonis.AspNetCore.JsonRpc
                 return;
             }
 
-            if (_options.ValidateAcceptHeader)
+            if (!_options.IgnoreEmptyAcceptHeader)
             {
                 if (!context.Request.Headers.TryGetValue(HeaderNames.Accept, out var acceptTypeHeaderValueString))
                 {
@@ -156,8 +156,7 @@ namespace Anemonis.AspNetCore.JsonRpc
                     return;
                 }
 
-                if (!acceptTypeHeaderValue.MediaType.Equals(MediaTypes.Any, StringComparison.OrdinalIgnoreCase) &&
-                    !acceptTypeHeaderValue.MediaType.Equals(MediaTypes.ApplicationJson, StringComparison.OrdinalIgnoreCase))
+                if (!acceptTypeHeaderValue.MediaType.Equals(MediaTypes.ApplicationJson, StringComparison.OrdinalIgnoreCase))
                 {
                     context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
 
