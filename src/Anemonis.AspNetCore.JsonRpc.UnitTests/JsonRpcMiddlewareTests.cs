@@ -196,11 +196,8 @@ namespace Anemonis.AspNetCore.JsonRpc.UnitTests
             Assert.AreEqual(StatusCodes.Status406NotAcceptable, httpContext.Response.StatusCode);
         }
 
-        [DataTestMethod]
-        [DataRow(null)]
-        [DataRow("application/xml")]
-        [DataRow("text/plain")]
-        public async Task InvokeAsyncWhenIgnoreEmptyAcceptHeaderIsEnabled(string mediaType)
+        [TestMethod]
+        public async Task InvokeAsyncWhenAcceptHeaderIsNotSpecifiedAndIgnoreEmptyAcceptHeaderIsEnabled()
         {
             var serviceProviderMock = new Mock<IServiceProvider>(MockBehavior.Strict);
 
@@ -224,14 +221,40 @@ namespace Anemonis.AspNetCore.JsonRpc.UnitTests
             httpContext.Request.Method = HttpMethods.Post;
             httpContext.Request.ContentType = "application/json; charset=utf-8";
 
-            if (mediaType != null)
-            {
-                httpContext.Request.Headers.Add(HeaderNames.Accept, mediaType);
-            }
-
             await jsonRpcMiddleware.InvokeAsync(httpContext, c => Task.CompletedTask);
 
             Assert.AreEqual(StatusCodes.Status200OK, httpContext.Response.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task InvokeAsyncWhenAcceptHeaderIsNotEmptyAndIgnoreEmptyAcceptHeaderIsEnabled()
+        {
+            var serviceProviderMock = new Mock<IServiceProvider>(MockBehavior.Strict);
+
+            serviceProviderMock.Setup(o => o.GetService(typeof(JsonRpcTestHandler1)))
+                .Returns(null);
+            serviceProviderMock.Setup(o => o.GetService(typeof(IOptions<JsonRpcOptions>)))
+                .Returns(Options.Create(new JsonRpcOptions() { IgnoreEmptyAcceptHeader = true }));
+            serviceProviderMock.Setup(o => o.GetService(typeof(ILoggerFactory)))
+                .Returns(null);
+
+            var environmentMock = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
+
+            environmentMock
+                .Setup(o => o.EnvironmentName)
+                .Returns(Environments.Production);
+
+            var loggerMock = new Mock<ILogger<JsonRpcMiddleware<JsonRpcTestHandler1>>>(MockBehavior.Loose);
+            var jsonRpcMiddleware = new JsonRpcMiddleware<JsonRpcTestHandler1>(serviceProviderMock.Object, environmentMock.Object, loggerMock.Object);
+            var httpContext = new DefaultHttpContext();
+
+            httpContext.Request.Method = HttpMethods.Post;
+            httpContext.Request.ContentType = "application/json; charset=utf-8";
+            httpContext.Request.Headers.Add(HeaderNames.Accept, "application/xml");
+
+            await jsonRpcMiddleware.InvokeAsync(httpContext, c => Task.CompletedTask);
+
+            Assert.AreEqual(StatusCodes.Status406NotAcceptable, httpContext.Response.StatusCode);
         }
 
         [DataTestMethod]

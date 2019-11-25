@@ -20,7 +20,7 @@ namespace Anemonis.AspNetCore.JsonRpc
         }
 
         /// <summary>
-        /// By default HTTP Accept header is required and only 'application/json' is valid, with this option Middleware disable any validation for Accept header
+        /// By default HTTP Accept header is required and only 'application/json' is valid, IgnoreEmptyAcceptHeader allows you to omit Accept header
         /// </summary>
         public bool IgnoreEmptyAcceptHeader
         {

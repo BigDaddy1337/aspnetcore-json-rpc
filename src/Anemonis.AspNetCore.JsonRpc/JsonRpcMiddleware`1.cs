@@ -148,9 +148,11 @@ namespace Anemonis.AspNetCore.JsonRpc
                 return;
             }
 
-            if (!_options.IgnoreEmptyAcceptHeader)
+            var hasAcceptHeader = context.Request.Headers.TryGetValue(HeaderNames.Accept, out var acceptTypeHeaderValueString);
+
+            if (!_options.IgnoreEmptyAcceptHeader || hasAcceptHeader)
             {
-                if (!context.Request.Headers.TryGetValue(HeaderNames.Accept, out var acceptTypeHeaderValueString))
+                if (!hasAcceptHeader)
                 {
                     context.Response.StatusCode = StatusCodes.Status406NotAcceptable;
 
